@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pretpostavljanje spola i dobi</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            max-width: 70%;
+            width: 100%;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+        .container h1 {
+            margin: 0 0 20px;
+        }
+        .container input[type="file"] {
+            margin-bottom: 20px;
+        }
+        .container button {
+            display: block;
+            width: 75%;
+            margin: 0 auto;
+            padding: 10px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .container button:hover {
+            background-color: #023771;
+        }
+        .container .result {
+            margin-top: 20px;
+        }
+        #imageUpload {
+            display: block;
+            margin: 0 auto;
+            padding: 50px;
+            border: 2px dashed #777;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+            margin-bottom: 45px;
+            margin-top: 45px;
+        }
+        #image-preview img {
+            margin: 0 auto;
+            display: none;
+            max-width: 300px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        #prediction-result {
+            margin: 0 auto;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Pretpostavljanje spola i dobi osobe sa slike</h1>
+    <input type="file" id="imageUpload" accept="image/*">
+    <button onclick="uploadImage()">Izračunaj</button>
+    <div id="image-preview" style="margin: 20px auto;">
+        <img id="preview-img" src="" alt="Image Preview">
+    </div>
+    <div id="prediction-result"></div>
+</div>
+
+<script>
+    document.getElementById('imageUpload').addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imgElement = document.getElementById('preview-img');
+                imgElement.src = e.target.result;
+                imgElement.style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+
+    async function uploadImage() {
+        const input = document.getElementById('imageUpload');
+        if (input.files.length === 0) {
+            alert("Please select an image file.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', input.files[0]);
+
+        try {
+            const response = await fetch('http://127.0.0.1:8000/predict', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                displayResult(result);
+            } else {
+                document.getElementById('prediction-result').innerText = "Error predicting image";
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            document.getElementById('prediction-result').innerText = "Error predicting image";
+        }
+    }
+
+    function displayResult(result) {
+        const resultDiv = document.getElementById('prediction-result');
+        resultDiv.innerHTML = `
+            <p><strong>Gender:</strong> ${result.gender}</p>
+            <p><strong>Age:</strong> ${result.age}</p>
+        `;
+    }
+</script>
+
+</body>
+</html>
